@@ -22,12 +22,12 @@ Example requests and responses are in [docs/api-transcript.txt](docs/api-transcr
 
 ## Stack
 
-Django 4.2, graphene-django, boto3 (Cognito), django-cors-headers, gunicorn.
+Django 5.2 LTS, graphene-django, boto3 (Cognito), django-cors-headers, gunicorn.
 
 ## Local setup
 
 ```bash
-python3 -m venv .venv && source .venv/bin/activate
+python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.sample .env        # uses AUTH_PROVIDER=memory
 SEED_DEMO_ON_START=1 python manage.py runserver 8000
@@ -60,3 +60,24 @@ Tests don't need a `.env` or network access. The Cognito adapter is tested with 
 - No resolver checks tokens yet, and there is no refresh, sign-out, password reset or MFA.
 - Goal fields are written as Cognito custom attributes, which have to exist when the user pool is created.
 
+
+## Request boundaries
+
+```mermaid
+flowchart LR
+  Client[GraphQL client] --> Schema[Typed mutations and queries]
+  Schema --> Adapter[Authentication provider interface]
+  Adapter --> Memory[In-memory local provider]
+  Adapter --> Cognito[AWS Cognito]
+  Schema --> Goal[Goal parser]
+  Goal --> Rules[Deterministic local rules]
+  Goal -. Optional .-> Model[Hosted model with fallback]
+```
+
+The runtime lock is verified with Python 3.12 and Django 5.2.18. Edit
+`requirements.in` and regenerate `requirements.txt` when changing runtime dependencies.
+Production deployment is a separate manual workflow action; publishing code does not deploy it.
+
+## Author
+
+[**Muhammad Nadeem**](https://github.com/dev-mnadeem)
